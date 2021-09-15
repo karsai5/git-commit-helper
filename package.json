@@ -1,0 +1,7 @@
+{
+  "name": "git-commit-helper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Linus Karsai linus@linusk.com.au",
+  "license": "MIT"
+}
