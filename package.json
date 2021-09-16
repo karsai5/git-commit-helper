@@ -7,7 +7,7 @@
   "license": "MIT",
   "prepublish": "tsc",
   "bin": {
-    "git-template-helper": "./lib/cli.js"
+    "git-template-helper": "./dist/cli.js"
   },
   "dependencies": {
     "chalk": "^4.1.2",
@@ -31,7 +31,7 @@
     "typescript": "^4.4.3"
   },
   "scripts": {
-    "start": "./lib/cli.js",
+    "start": "./dist/cli.js",
     "watch": "nodemon --watch 'src/**/*.ts' --exec 'yarn build'",
     "create": "yarn build && yarn test",
     "build": "tsc -p .",
