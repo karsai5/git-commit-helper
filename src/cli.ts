@@ -12,10 +12,24 @@ const fs = require("fs");
 const cliSelect = require("cli-select");
 const list = require("cli-list-select");
 const inquirer = require("inquirer");
+const Validator = require("jsonschema").Validator;
+const v = new Validator();
 
 const TEAM_MEMBERS_FILE = "team-members.json";
 const CONFIG_FILE = ".git-commit-helper.json";
 const GIT_MESSAGE_FILE = ".gitmessage";
+const JSON_SCHEMA_INSTANCE = 4;
+
+const teamMembersSchema = {
+  type: "array",
+  items: {
+    properties: {
+      name: { type: "string" },
+      email: { type: "string" },
+    },
+    required: ["name", "email"],
+  },
+};
 
 type TeamMember = {
   name: string;
@@ -54,18 +68,25 @@ const requestDataFromUser = async (
 ): Promise<{ commitPrefix: string; pairs: Array<TeamMember> }> => {
   const teamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
   if (!fs.existsSync(teamMembersFilePath)) {
-    console.log(`Cannot file team members file: ${TEAM_MEMBERS_FILE}`);
+    console.log(`Cannot find team members file: ${TEAM_MEMBERS_FILE}`);
     exit(1);
   }
-  console.debug("Found team members file", teamMembersFilePath);
 
   let teamMembers: Array<TeamMember> = [];
 
   try {
     const rawData = fs.readFileSync(teamMembersFilePath);
     teamMembers = JSON.parse(rawData);
+    const validationResult = v.validate(
+      JSON_SCHEMA_INSTANCE,
+      teamMembersSchema
+    );
+    if (validationResult.errors.length > 0) {
+      throw new Error("Invalid json");
+    }
   } catch {
-    console.log("Team members file seems to have invalid json");
+    console.log("Team members file seems to have invalid json.");
+    console.log("Expecting array of {name, email}");
   }
 
   return inquirer.prompt([
@@ -96,7 +117,6 @@ const getConfig = (gitRootDirectory: string): ConfigFile | undefined => {
   const configFilePath = gitRootDirectory + "/" + CONFIG_FILE;
 
   if (!fs.existsSync(configFilePath)) {
-    console.debug(`Cannot config file`);
     return undefined;
   }
 
@@ -118,8 +138,6 @@ const main = async () => {
     console.log("Not in git repository");
     exit(1);
   }
-
-  console.debug("Found git repository", gitRootDirectory);
 
   const config = getConfig(gitRootDirectory);
 

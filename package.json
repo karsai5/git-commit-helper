@@ -18,6 +18,7 @@
     "find-git-root": "^1.0.4",
     "git-root-dir": "^1.0.2",
     "inquirer": "^8.1.5",
+    "jsonschema": "^1.4.0",
     "path": "^0.12.7"
   },
   "devDependencies": {
