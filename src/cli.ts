@@ -2,15 +2,8 @@
 
 import { exit } from "process";
 
-const chalk = require("chalk");
-const clear = require("clear");
-const figlet = require("figlet");
-const path = require("path");
-const program = require("commander");
 const gitRootDir = require("git-root-dir");
 const fs = require("fs");
-const cliSelect = require("cli-select");
-const list = require("cli-list-select");
 const inquirer = require("inquirer");
 const Validator = require("jsonschema").Validator;
 const printMessage = require("print-message");
