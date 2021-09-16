@@ -31,7 +31,7 @@
     "typescript": "^4.4.3"
   },
   "scripts": {
-    "start": "./dist/cli.js",
+    "start": "ts-node ./src/cli.ts",
     "watch": "nodemon --watch 'src/**/*.ts' --exec 'yarn build'",
     "create": "yarn build && yarn test",
     "build": "tsc -p .",
