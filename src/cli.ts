@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { exit } from "process";
+import { stringify } from "querystring";
 
 const gitRootDir = require("git-root-dir");
 const fs = require("fs");
@@ -37,8 +38,16 @@ type ConfigFile = {
   pairingWith: Array<string>;
 };
 
+export type Paths = {
+  gitRootDirectory: string;
+  gitTemplateHelperDirectory: string;
+  configFilePath: string;
+  messageFilePath: string;
+  teamMembersFilePath: string;
+};
+
 const saveConfig = (
-  gitRootDirectory: string,
+  paths: Paths,
   prefix: string,
   teamMembers: Array<TeamMember>
 ) => {
@@ -47,7 +56,7 @@ const saveConfig = (
     pairingWith: teamMembers.map((teamMember) => teamMember.email),
   };
   var configString = JSON.stringify(config, null, 2);
-  fs.writeFileSync(`${gitRootDirectory}/${CONFIG_FILE}`, configString);
+  fs.writeFileSync(paths.configFilePath, configString);
 };
 
 const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
@@ -59,19 +68,13 @@ const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
 };
 
 const requestDataFromUser = async (
-  gitRootDirectory: string,
+  paths: Paths,
   config: ConfigFile | undefined
 ): Promise<{ commitPrefix: string; pairs: Array<TeamMember> }> => {
-  const teamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
-  if (!fs.existsSync(teamMembersFilePath)) {
-    console.log(`Cannot find team members file: ${TEAM_MEMBERS_FILE}`);
-    exit(1);
-  }
-
   let teamMembers: Array<TeamMember> = [];
 
   try {
-    const rawData = fs.readFileSync(teamMembersFilePath);
+    const rawData = fs.readFileSync(paths.teamMembersFilePath);
     teamMembers = JSON.parse(rawData);
     const validationResult = v.validate(teamMembers, teamMembersSchema);
     if (validationResult.errors.length > 0) {
@@ -107,14 +110,12 @@ const requestDataFromUser = async (
   ]);
 };
 
-const getConfig = (gitRootDirectory: string): ConfigFile | undefined => {
-  const configFilePath = gitRootDirectory + "/" + CONFIG_FILE;
-
-  if (!fs.existsSync(configFilePath)) {
+const getConfig = (paths: Paths): ConfigFile | undefined => {
+  if (!fs.existsSync(paths.configFilePath)) {
     return undefined;
   }
 
-  const rawData = fs.readFileSync(configFilePath);
+  const rawData = fs.readFileSync(paths.configFilePath);
   return JSON.parse(rawData) as ConfigFile;
 };
 
@@ -125,10 +126,10 @@ const generateCommitMessage = (commitPrefix: string) => {
   return `${commitPrefix} <Message>`;
 };
 
-const setGitConfig = async (path: string) => {
+const setGitConfig = async (paths: Paths) => {
   try {
     const currentTemplatePath = await exec("git config --get commit.template");
-    if (!currentTemplatePath.stdout.includes(path)) {
+    if (!currentTemplatePath.stdout.includes(paths.messageFilePath)) {
       throw new Error("Current git template is wrong");
     }
   } catch {
@@ -141,47 +142,72 @@ const setGitConfig = async (path: string) => {
       },
     ]);
     if (result.setTemplateDirectory) {
-      await exec(`git config commit.template ${path}`);
+      await exec(`git config commit.template ${paths.messageFilePath}`);
     }
   }
 };
 
-const main = async () => {
-  console.log("Git Commit Helper");
+const getPaths = async (): Promise<Paths> => {
   const gitRootDirectory = await gitRootDir(process.cwd());
-  const gitCommitHelperDirectory =
-    gitRootDirectory + "/" + GIT_TEMPLATE_HELPER_DIRECTORY;
   if (!gitRootDirectory) {
     console.log("Not in git repository");
     exit(1);
   }
 
-  const config = getConfig(gitRootDirectory);
+  const gitTemplateHelperDirectory =
+    gitRootDirectory + "/" + GIT_TEMPLATE_HELPER_DIRECTORY;
+  const teamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
+  const configFilePath = gitRootDirectory + "/" + CONFIG_FILE;
+  const messageFilePath = gitRootDirectory + "/" + GIT_MESSAGE_FILE;
 
-  const { commitPrefix, pairs } = await requestDataFromUser(
-    gitRootDirectory,
-    config
-  );
-
-  if (!fs.existsSync(gitCommitHelperDirectory)) {
-    await fs.promises.mkdir(gitCommitHelperDirectory);
+  if (!fs.existsSync(teamMembersFilePath)) {
+    console.log(`Cannot find team members file: ${TEAM_MEMBERS_FILE}`);
+    exit(1);
   }
 
-  saveConfig(gitRootDirectory, commitPrefix, pairs);
+  if (!fs.existsSync(gitTemplateHelperDirectory)) {
+    await fs.promises.mkdir(gitTemplateHelperDirectory);
+  }
 
+  return {
+    gitRootDirectory,
+    gitTemplateHelperDirectory,
+    teamMembersFilePath,
+    configFilePath,
+    messageFilePath,
+  };
+};
+
+const saveGitMessage = (
+  paths: Paths,
+  commitPrefix: string,
+  pairs: Array<TeamMember>
+) => {
   const coAuthoredBy = generateCoAuthorSection(pairs);
   const commitMessage = generateCommitMessage(commitPrefix);
 
-  const messagePath = `${gitRootDirectory}/${GIT_MESSAGE_FILE}`;
   const fullMessage = commitMessage + "\n\n" + coAuthoredBy;
 
-  fs.writeFileSync(messagePath, fullMessage);
+  fs.writeFileSync(paths.messageFilePath, fullMessage);
+  return fullMessage;
+};
+
+const main = async () => {
+  const paths = await getPaths();
+
+  const config = getConfig(paths);
+
+  const { commitPrefix, pairs } = await requestDataFromUser(paths, config);
+
+  saveConfig(paths, commitPrefix, pairs);
+
+  const fullMessage = saveGitMessage(paths, commitPrefix, pairs);
 
   console.log("\nHere's your new commit template:");
   printMessage(fullMessage.split("\n"));
   console.log("Happy coding!");
 
-  await setGitConfig(messagePath);
+  await setGitConfig(paths);
 
   exit(0);
 };
