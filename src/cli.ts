@@ -13,10 +13,32 @@ const cliSelect = require("cli-select");
 const list = require("cli-list-select");
 
 const TEAM_MEMBERS_FILE = "team-members.json";
+const CONFIG_FILE = ".git-commit-config.json";
 
 type TeamMember = {
   name: string;
   email: string;
+};
+
+const saveConfig = (
+  gitRootDirectory: string,
+  prefix: string,
+  teamMembers: Array<TeamMember>
+) => {
+  const config = {
+    prefix,
+    pairingWith: teamMembers.map((teamMember) => teamMember.email),
+  };
+  var configString = JSON.stringify(config, null, 2);
+  fs.writeFileSync(`${gitRootDirectory}/${CONFIG_FILE}`, configString);
+};
+
+const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
+  return teamMembers
+    .map(
+      (teamMember) => `Co-authored-by: ${teamMember.name} <${teamMember.email}>`
+    )
+    .join("\n");
 };
 
 const main = async () => {
@@ -52,7 +74,11 @@ const main = async () => {
   const pairs = listResults.checks.map((index: number) => {
     return teamMembers[index];
   });
-  console.log("selectedTeamMembers", pairs);
+
+  const coAuthoredBy = generateCoAuthorSection(pairs);
+  console.log(coAuthoredBy);
+  saveConfig(gitRootDirectory, "testPrefix", pairs);
+  exit(0);
 };
 
 main();
