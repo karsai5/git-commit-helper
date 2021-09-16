@@ -11,9 +11,13 @@ const gitRootDir = require("git-root-dir");
 const fs = require("fs");
 const cliSelect = require("cli-select");
 const list = require("cli-list-select");
+const readline = require("readline");
+
+const rl = readline.createInterface(process.stdin, process.stdout);
 
 const TEAM_MEMBERS_FILE = "team-members.json";
 const CONFIG_FILE = ".git-commit-helper.json";
+const GIT_MESSAGE_FILE = ".gitmessage";
 
 type TeamMember = {
   name: string;
@@ -46,7 +50,7 @@ const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
     .join("\n");
 };
 
-const showlistOfPairs = async (
+const requestWhoUserIsPairingWith = async (
   gitRootDirectory: string,
   config: ConfigFile | undefined
 ): Promise<Array<TeamMember>> => {
@@ -93,6 +97,26 @@ const getConfig = (gitRootDirectory: string): ConfigFile | undefined => {
   return JSON.parse(rawData) as ConfigFile;
 };
 
+const requestCommitPrefix = (
+  config: ConfigFile | undefined
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    rl.question("Git commit message prefix: ", (answer: any) => {
+      resolve(answer);
+    });
+    if (config?.prefix) {
+      rl.write(config.prefix);
+    }
+  });
+};
+
+const generateCommitMessage = (commitPrefix: string) => {
+  if (!commitPrefix || commitPrefix === "") {
+    return "<Message>";
+  }
+  return `${commitPrefix} <Message>`;
+};
+
 const main = async () => {
   console.log("Git Commit Helper");
   const gitRootDirectory = await gitRootDir(process.cwd());
@@ -105,11 +129,19 @@ const main = async () => {
 
   const config = getConfig(gitRootDirectory);
 
-  const pairs = await showlistOfPairs(gitRootDirectory, config);
+  const commitPrefix = await requestCommitPrefix(config);
+
+  const pairs = await requestWhoUserIsPairingWith(gitRootDirectory, config);
+
+  saveConfig(gitRootDirectory, commitPrefix, pairs);
 
   const coAuthoredBy = generateCoAuthorSection(pairs);
-  console.log(coAuthoredBy);
-  saveConfig(gitRootDirectory, "testPrefix", pairs);
+  const commitMessage = generateCommitMessage(commitPrefix);
+
+  const fullMessage = commitMessage + "\n\n" + coAuthoredBy;
+
+  fs.writeFileSync(`${gitRootDirectory}/${GIT_MESSAGE_FILE}`, fullMessage);
+
   exit(0);
 };
 
