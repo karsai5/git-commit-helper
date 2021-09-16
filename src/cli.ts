@@ -88,6 +88,7 @@ const requestDataFromUser = async (
   } catch (error) {
     console.log("Team members file seems to have invalid json.");
     console.log("Expecting array of {name, email}");
+    exit(1);
   }
 
   return inquirer.prompt([

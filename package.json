@@ -1,11 +1,13 @@
 {
-  "name": "@linusk/git-commit-helper",
+  "name": "git-template-helper",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
   "author": "Linus Karsai linus@linusk.com.au",
   "license": "MIT",
+  "prepublish": "tsc",
   "bin": {
-    "gch": "./lib/cli.js"
+    "git-template-helper": "./lib/cli.js"
   },
   "dependencies": {
     "chalk": "^4.1.2",
