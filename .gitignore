@@ -1,6 +1,5 @@
 node_modules
 lib
 .gitconfig
-.gitmessage
 team-members.json
-.git-commit-helper.json
+.git-commit-helper

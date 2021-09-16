@@ -16,8 +16,9 @@ const Validator = require("jsonschema").Validator;
 const v = new Validator();
 
 const TEAM_MEMBERS_FILE = "team-members.json";
-const CONFIG_FILE = ".git-commit-helper.json";
-const GIT_MESSAGE_FILE = ".gitmessage";
+const GIT_COMMIT_HELPER_DIRECTORY = ".git-commit-helper";
+const CONFIG_FILE = GIT_COMMIT_HELPER_DIRECTORY + "/config.json";
+const GIT_MESSAGE_FILE = GIT_COMMIT_HELPER_DIRECTORY + "/message.txt";
 const JSON_SCHEMA_INSTANCE = 4;
 
 const teamMembersSchema = {
@@ -134,6 +135,8 @@ const generateCommitMessage = (commitPrefix: string) => {
 const main = async () => {
   console.log("Git Commit Helper");
   const gitRootDirectory = await gitRootDir(process.cwd());
+  const gitCommitHelperDirectory =
+    gitRootDirectory + "/" + GIT_COMMIT_HELPER_DIRECTORY;
   if (!gitRootDirectory) {
     console.log("Not in git repository");
     exit(1);
@@ -145,6 +148,10 @@ const main = async () => {
     gitRootDirectory,
     config
   );
+
+  if (!fs.existsSync(gitCommitHelperDirectory)) {
+    await fs.promises.mkdir(gitCommitHelperDirectory);
+  }
 
   saveConfig(gitRootDirectory, commitPrefix, pairs);
 
