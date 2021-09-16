@@ -2,4 +2,4 @@ node_modules
 dist
 .gitconfig
 team-members.json
-.git-commit-helper
+.git-template-helper
