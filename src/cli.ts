@@ -19,10 +19,9 @@ const exec = promisify(require("child_process").exec);
 
 const v = new Validator();
 const TEAM_MEMBERS_FILE = "team-members.json";
-const GIT_COMMIT_HELPER_DIRECTORY = ".git-commit-helper";
-const CONFIG_FILE = GIT_COMMIT_HELPER_DIRECTORY + "/config.json";
-const GIT_MESSAGE_FILE = GIT_COMMIT_HELPER_DIRECTORY + "/message.txt";
-const JSON_SCHEMA_INSTANCE = 4;
+const GIT_TEMPLATE_HELPER_DIRECTORY = ".git-template-helper";
+const CONFIG_FILE = GIT_TEMPLATE_HELPER_DIRECTORY + "/config.json";
+const GIT_MESSAGE_FILE = GIT_TEMPLATE_HELPER_DIRECTORY + "/message.txt";
 
 const teamMembersSchema = {
   type: "array",
@@ -158,7 +157,7 @@ const main = async () => {
   console.log("Git Commit Helper");
   const gitRootDirectory = await gitRootDir(process.cwd());
   const gitCommitHelperDirectory =
-    gitRootDirectory + "/" + GIT_COMMIT_HELPER_DIRECTORY;
+    gitRootDirectory + "/" + GIT_TEMPLATE_HELPER_DIRECTORY;
   if (!gitRootDirectory) {
     console.log("Not in git repository");
     exit(1);
