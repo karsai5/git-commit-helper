@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { exit } from "process";
-import { stringify } from "querystring";
+import { getConfig, saveConfig } from "./config";
 
 const gitRootDir = require("git-root-dir");
 const fs = require("fs");
@@ -28,12 +28,12 @@ const teamMembersSchema = {
   },
 };
 
-type TeamMember = {
+export type TeamMember = {
   name: string;
   email: string;
 };
 
-type ConfigFile = {
+export type ConfigFile = {
   prefix: string;
   pairingWith: Array<string>;
 };
@@ -44,19 +44,6 @@ export type Paths = {
   configFilePath: string;
   messageFilePath: string;
   teamMembersFilePath: string;
-};
-
-const saveConfig = (
-  paths: Paths,
-  prefix: string,
-  teamMembers: Array<TeamMember>
-) => {
-  const config = {
-    prefix,
-    pairingWith: teamMembers.map((teamMember) => teamMember.email),
-  };
-  var configString = JSON.stringify(config, null, 2);
-  fs.writeFileSync(paths.configFilePath, configString);
 };
 
 const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
@@ -108,15 +95,6 @@ const requestDataFromUser = async (
       }),
     },
   ]);
-};
-
-const getConfig = (paths: Paths): ConfigFile | undefined => {
-  if (!fs.existsSync(paths.configFilePath)) {
-    return undefined;
-  }
-
-  const rawData = fs.readFileSync(paths.configFilePath);
-  return JSON.parse(rawData) as ConfigFile;
 };
 
 const generateCommitMessage = (commitPrefix: string) => {
