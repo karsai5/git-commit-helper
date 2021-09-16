@@ -1,6 +1,6 @@
 {
   "name": "git-template-helper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/cli.js",
   "types": "dist/cli.d.ts",
   "author": "Linus Karsai linus@linusk.com.au",
