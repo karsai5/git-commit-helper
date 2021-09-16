@@ -707,6 +707,11 @@ keyv@^3.0.0:
   dependencies:
     json-buffer "3.0.0"
 
+kleur@3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
+  integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
+
 latest-version@^5.0.0:
   version "5.1.0"
   resolved "https://registry.yarnpkg.com/latest-version/-/latest-version-5.1.0.tgz#119dfe908fe38d15dfa43ecd13fa12ec8832face"
@@ -917,6 +922,13 @@ prepend-http@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/prepend-http/-/prepend-http-2.0.0.tgz#e92434bfa5ea8c19f41cdfd401d741a3c819d897"
   integrity sha1-6SQ0v6XqjBn0HN/UAddBo8gZ2Jc=
+
+print-message@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/print-message/-/print-message-3.0.1.tgz#f2331a13df235e275725ddd34eb61988868a73cd"
+  integrity sha512-wsvsI08pLCPL+lHURVmlZ2KjXN/rLKNyeKN/r3FkXAX6ZByE8Fv8ZmvkQFqpdPdyfCPty3PzznrDda+E8DvN8Q==
+  dependencies:
+    kleur "3.0.3"
 
 process@^0.11.1:
   version "0.11.10"

@@ -13,8 +13,11 @@ const cliSelect = require("cli-select");
 const list = require("cli-list-select");
 const inquirer = require("inquirer");
 const Validator = require("jsonschema").Validator;
-const v = new Validator();
+const printMessage = require("print-message");
+const { promisify } = require("util");
+const exec = promisify(require("child_process").exec);
 
+const v = new Validator();
 const TEAM_MEMBERS_FILE = "team-members.json";
 const GIT_COMMIT_HELPER_DIRECTORY = ".git-commit-helper";
 const CONFIG_FILE = GIT_COMMIT_HELPER_DIRECTORY + "/config.json";
@@ -78,14 +81,11 @@ const requestDataFromUser = async (
   try {
     const rawData = fs.readFileSync(teamMembersFilePath);
     teamMembers = JSON.parse(rawData);
-    const validationResult = v.validate(
-      JSON_SCHEMA_INSTANCE,
-      teamMembersSchema
-    );
+    const validationResult = v.validate(teamMembers, teamMembersSchema);
     if (validationResult.errors.length > 0) {
       throw new Error("Invalid json");
     }
-  } catch {
+  } catch (error) {
     console.log("Team members file seems to have invalid json.");
     console.log("Expecting array of {name, email}");
   }
@@ -132,6 +132,27 @@ const generateCommitMessage = (commitPrefix: string) => {
   return `${commitPrefix} <Message>`;
 };
 
+const setGitConfig = async (path: string) => {
+  try {
+    const currentTemplatePath = await exec("git config --get commit.template");
+    if (!currentTemplatePath.stdout.includes(path)) {
+      throw new Error("Current git template is wrong");
+    }
+  } catch {
+    const result = await inquirer.prompt([
+      {
+        type: "confirm",
+        name: "setTemplateDirectory",
+        message:
+          "Would you like to update git template to use the newly generate message?",
+      },
+    ]);
+    if (result.setTemplateDirectory) {
+      await exec(`git config commit.template ${path}`);
+    }
+  }
+};
+
 const main = async () => {
   console.log("Git Commit Helper");
   const gitRootDirectory = await gitRootDir(process.cwd());
@@ -158,9 +179,16 @@ const main = async () => {
   const coAuthoredBy = generateCoAuthorSection(pairs);
   const commitMessage = generateCommitMessage(commitPrefix);
 
+  const messagePath = `${gitRootDirectory}/${GIT_MESSAGE_FILE}`;
   const fullMessage = commitMessage + "\n\n" + coAuthoredBy;
 
-  fs.writeFileSync(`${gitRootDirectory}/${GIT_MESSAGE_FILE}`, fullMessage);
+  fs.writeFileSync(messagePath, fullMessage);
+
+  console.log("\nHere's your new commit template:");
+  printMessage(fullMessage.split("\n"));
+  console.log("Happy coding!");
+
+  await setGitConfig(messagePath);
 
   exit(0);
 };
