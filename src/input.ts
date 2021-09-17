@@ -5,13 +5,10 @@ const Validator = require("jsonschema").Validator;
 
 const v = new Validator();
 
-export const requestDataFromUser = async (
-  paths: Paths,
+export const requestCommitPrefixFromUser = async (
   config: ConfigFile | undefined
-): Promise<{ commitPrefix: string; pairs: Array<TeamMember> }> => {
-  let teamMembers: Array<TeamMember> = getTeamMembers(paths);
-
-  return inquirer.prompt([
+): Promise<string> => {
+  const result = await inquirer.prompt([
     {
       type: "input",
       name: "commitPrefix",
@@ -20,6 +17,16 @@ export const requestDataFromUser = async (
         return config?.prefix;
       },
     },
+  ]);
+  return result.commitPrefix;
+};
+
+export const requestPairsFromUser = async (
+  paths: Paths,
+  config: ConfigFile | undefined
+): Promise<Array<TeamMember>> => {
+  let teamMembers: Array<TeamMember> = getTeamMembers(paths);
+  const result = await inquirer.prompt([
     {
       type: "checkbox",
       message: "Who are you pairing with",
@@ -33,4 +40,5 @@ export const requestDataFromUser = async (
       }),
     },
   ]);
+  return result.pairs;
 };

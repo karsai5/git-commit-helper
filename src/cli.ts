@@ -4,7 +4,7 @@ import { exit } from "process";
 import { getConfig, saveConfig } from "./config";
 import { getPaths } from "./files";
 import { saveGitMessage } from "./gitTemplate";
-import { requestDataFromUser } from "./input";
+import { requestCommitPrefixFromUser, requestPairsFromUser } from "./input";
 
 const inquirer = require("inquirer");
 const printMessage = require("print-message");
@@ -55,7 +55,8 @@ const main = async () => {
 
   const config = getConfig(paths);
 
-  const { commitPrefix, pairs } = await requestDataFromUser(paths, config);
+  const commitPrefix = await requestCommitPrefixFromUser(config);
+  const pairs = await requestPairsFromUser(paths, config);
 
   saveConfig(paths, commitPrefix, pairs);
 
