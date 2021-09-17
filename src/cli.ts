@@ -2,31 +2,14 @@
 
 import { exit } from "process";
 import { getConfig, saveConfig } from "./config";
+import { getPaths } from "./files";
+import { saveGitMessage } from "./gitTemplate";
+import { requestDataFromUser } from "./input";
 
-const gitRootDir = require("git-root-dir");
-const fs = require("fs");
 const inquirer = require("inquirer");
-const Validator = require("jsonschema").Validator;
 const printMessage = require("print-message");
 const { promisify } = require("util");
 const exec = promisify(require("child_process").exec);
-
-const v = new Validator();
-const TEAM_MEMBERS_FILE = "team-members.json";
-const GIT_TEMPLATE_HELPER_DIRECTORY = ".git-template-helper";
-const CONFIG_FILE = GIT_TEMPLATE_HELPER_DIRECTORY + "/config.json";
-const GIT_MESSAGE_FILE = GIT_TEMPLATE_HELPER_DIRECTORY + "/message.txt";
-
-const teamMembersSchema = {
-  type: "array",
-  items: {
-    properties: {
-      name: { type: "string" },
-      email: { type: "string" },
-    },
-    required: ["name", "email"],
-  },
-};
 
 export type TeamMember = {
   name: string;
@@ -44,64 +27,6 @@ export type Paths = {
   configFilePath: string;
   messageFilePath: string;
   teamMembersFilePath: string;
-};
-
-const generateCoAuthorSection = (teamMembers: Array<TeamMember>) => {
-  return teamMembers
-    .map(
-      (teamMember) => `Co-authored-by: ${teamMember.name} <${teamMember.email}>`
-    )
-    .join("\n");
-};
-
-const requestDataFromUser = async (
-  paths: Paths,
-  config: ConfigFile | undefined
-): Promise<{ commitPrefix: string; pairs: Array<TeamMember> }> => {
-  let teamMembers: Array<TeamMember> = [];
-
-  try {
-    const rawData = fs.readFileSync(paths.teamMembersFilePath);
-    teamMembers = JSON.parse(rawData);
-    const validationResult = v.validate(teamMembers, teamMembersSchema);
-    if (validationResult.errors.length > 0) {
-      throw new Error("Invalid json");
-    }
-  } catch (error) {
-    console.log("Team members file seems to have invalid json.");
-    console.log("Expecting array of {name, email}");
-    exit(1);
-  }
-
-  return inquirer.prompt([
-    {
-      type: "input",
-      name: "commitPrefix",
-      message: "Commit prefix",
-      default() {
-        return config?.prefix;
-      },
-    },
-    {
-      type: "checkbox",
-      message: "Who are you pairing with",
-      name: "pairs",
-      choices: teamMembers.map((teamMember) => {
-        return {
-          name: `${teamMember.name} - ${teamMember.email}`,
-          checked: config?.pairingWith.includes(teamMember.email),
-          value: teamMember,
-        };
-      }),
-    },
-  ]);
-};
-
-const generateCommitMessage = (commitPrefix: string) => {
-  if (!commitPrefix || commitPrefix === "") {
-    return "<Message>";
-  }
-  return `${commitPrefix} <Message>`;
 };
 
 const setGitConfig = async (paths: Paths) => {
@@ -123,51 +48,6 @@ const setGitConfig = async (paths: Paths) => {
       await exec(`git config commit.template ${paths.messageFilePath}`);
     }
   }
-};
-
-const getPaths = async (): Promise<Paths> => {
-  const gitRootDirectory = await gitRootDir(process.cwd());
-  if (!gitRootDirectory) {
-    console.log("Not in git repository");
-    exit(1);
-  }
-
-  const gitTemplateHelperDirectory =
-    gitRootDirectory + "/" + GIT_TEMPLATE_HELPER_DIRECTORY;
-  const teamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
-  const configFilePath = gitRootDirectory + "/" + CONFIG_FILE;
-  const messageFilePath = gitRootDirectory + "/" + GIT_MESSAGE_FILE;
-
-  if (!fs.existsSync(teamMembersFilePath)) {
-    console.log(`Cannot find team members file: ${TEAM_MEMBERS_FILE}`);
-    exit(1);
-  }
-
-  if (!fs.existsSync(gitTemplateHelperDirectory)) {
-    await fs.promises.mkdir(gitTemplateHelperDirectory);
-  }
-
-  return {
-    gitRootDirectory,
-    gitTemplateHelperDirectory,
-    teamMembersFilePath,
-    configFilePath,
-    messageFilePath,
-  };
-};
-
-const saveGitMessage = (
-  paths: Paths,
-  commitPrefix: string,
-  pairs: Array<TeamMember>
-) => {
-  const coAuthoredBy = generateCoAuthorSection(pairs);
-  const commitMessage = generateCommitMessage(commitPrefix);
-
-  const fullMessage = commitMessage + "\n\n" + coAuthoredBy;
-
-  fs.writeFileSync(paths.messageFilePath, fullMessage);
-  return fullMessage;
 };
 
 const main = async () => {
