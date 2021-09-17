@@ -5,6 +5,7 @@ import { getConfig, saveConfig } from "./config";
 import { getPaths } from "./files";
 import { saveGitMessage } from "./gitTemplate";
 import { requestCommitPrefixFromUser, requestPairsFromUser } from "./input";
+import chalk from "chalk";
 
 const inquirer = require("inquirer");
 const printMessage = require("print-message");
@@ -50,10 +51,32 @@ const setGitConfig = async (paths: Paths) => {
   }
 };
 
+const getNameFromGit = async () => {
+  try {
+    const name = await exec("git config --get user.name");
+    return name.stdout.split(" ")[0];
+  } catch (error: any) {
+    console.log(error);
+    return "there";
+  }
+};
+
 const main = async () => {
   const paths = await getPaths();
 
   const config = getConfig(paths);
+
+  const name = await getNameFromGit();
+  console.log(chalk.bold(`Hi ${name}!`));
+  if (config) {
+    console.log(`Let's setup your git template...`);
+  } else {
+    console.log(
+      `Looks like you haven't used ${chalk.underline(
+        "git-template-helper"
+      )} before, this cli utility helps create and update your git template message.`
+    );
+  }
 
   const commitPrefix = await requestCommitPrefixFromUser(config);
   const pairs = await requestPairsFromUser(paths, config);
