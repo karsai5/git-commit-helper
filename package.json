@@ -22,7 +22,8 @@
     "inquirer": "^8.1.5",
     "jsonschema": "^1.4.0",
     "path": "^0.12.7",
-    "print-message": "^3.0.1"
+    "print-message": "^3.0.1",
+    "prompt": "^1.2.0"
   },
   "devDependencies": {
     "@types/node": "^16.9.1",

@@ -1,24 +1,25 @@
+import chalk from "chalk";
 import { ConfigFile, Paths, TeamMember } from "./cli";
 import { getTeamMembers } from "./files";
 const inquirer = require("inquirer");
-const Validator = require("jsonschema").Validator;
-
-const v = new Validator();
+var readline = require("readline");
 
 export const requestCommitPrefixFromUser = async (
   config: ConfigFile | undefined
 ): Promise<string> => {
-  const result = await inquirer.prompt([
-    {
-      type: "input",
-      name: "commitPrefix",
-      message: "Commit prefix",
-      default() {
-        return config?.prefix;
-      },
-    },
-  ]);
-  return result.commitPrefix;
+  const result = await new Promise<string>((resolve) => {
+    const rl = readline.createInterface(process.stdin, process.stdout);
+    rl.question(
+      `${chalk.green("?")} ${chalk.bold(
+        "What would you like your commit prefix to be: "
+      )}`,
+      function (answer: string) {
+        resolve(answer);
+      }
+    );
+    rl.write(config?.prefix);
+  });
+  return result.trim();
 };
 
 export const requestPairsFromUser = async (
