@@ -74,7 +74,7 @@ const main = async () => {
     console.log(
       `Looks like you haven't used ${chalk.underline(
         "git-template-helper"
-      )} before, this cli utility helps create and update your git template message.`
+      )} in this repo before, this cli utility helps create and update your git template message.`
     );
   }
 

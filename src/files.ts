@@ -4,6 +4,7 @@ import { Paths, TeamMember } from "./cli";
 const gitRootDir = require("git-root-dir");
 const Validator = require("jsonschema").Validator;
 const v = new Validator();
+const homedir = require('os').homedir();
 
 const TEAM_MEMBERS_FILE = "team-members.json";
 const GIT_TEMPLATE_HELPER_DIRECTORY = ".git-template-helper";
@@ -19,11 +20,17 @@ export const getPaths = async (): Promise<Paths> => {
 
   const gitTemplateHelperDirectory =
     gitRootDirectory + "/" + GIT_TEMPLATE_HELPER_DIRECTORY;
-  const teamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
+  const localTeamMembersFilePath = gitRootDirectory + "/" + TEAM_MEMBERS_FILE;
+  const rootTeamMembersFilePath = homedir + "/.config/git-template-helper/" + TEAM_MEMBERS_FILE;
   const configFilePath = gitRootDirectory + "/" + CONFIG_FILE;
   const messageFilePath = gitRootDirectory + "/" + GIT_MESSAGE_FILE;
 
-  if (!fs.existsSync(teamMembersFilePath)) {
+  let teamMembersFilePath;
+  if (fs.existsSync(localTeamMembersFilePath)) {
+    teamMembersFilePath = localTeamMembersFilePath;
+  } else if (fs.existsSync(rootTeamMembersFilePath)) {
+    teamMembersFilePath = rootTeamMembersFilePath;
+  } else {
     console.log(`Cannot find team members file: ${TEAM_MEMBERS_FILE}`);
     exit(1);
   }
@@ -35,7 +42,7 @@ export const getPaths = async (): Promise<Paths> => {
   return {
     gitRootDirectory,
     gitTemplateHelperDirectory,
-    teamMembersFilePath,
+    teamMembersFilePath: localTeamMembersFilePath,
     configFilePath,
     messageFilePath,
   };
